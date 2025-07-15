@@ -49,6 +49,7 @@ function DoctorDashboard() {
       }));
   
       console.log('Fetched patients:', patients);
+      console.log('Raw role-patient data:', data);
       setPatients(patients);
     };
   
