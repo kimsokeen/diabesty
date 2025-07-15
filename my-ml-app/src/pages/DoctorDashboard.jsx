@@ -36,7 +36,6 @@ function DoctorDashboard() {
         .select('id, full_name, age, gender')
         .eq('role', 'patient');
       
-      console.log('Fetched patients:', patients);
       if (!error) setPatients(data);
       else console.error('Failed to fetch patients:', error.message);
     };
