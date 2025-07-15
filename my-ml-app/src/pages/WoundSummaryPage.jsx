@@ -57,7 +57,6 @@ function WoundSummaryPage() {
   // ✅ Highlight dates with data
   const tileClassName = ({ date, view }) => {
     if (view === 'month') {
-      const dateStr = date.toISOString().split('T')[0];
       return results.some((r) => {
         const rDate = new Date(r.date);
         return (
