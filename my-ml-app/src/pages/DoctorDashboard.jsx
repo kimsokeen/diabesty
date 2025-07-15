@@ -41,15 +41,19 @@ function DoctorDashboard() {
         return;
       }
   
-      const patients = data.map((entry) => ({
-        id: entry.users.id,
-        full_name: entry.users.full_name,
-        gender: entry.users.gender,
-        age: entry.users.age,
-      }));
+      console.log('Raw role-patient data:', data); // 🔍 check this output
   
-      console.log('Fetched patients:', patients);
-      console.log('Raw role-patient data:', data);
+      // Flatten the data
+      const patients = data
+        .filter(entry => entry.users !== null) // filter out bad joins
+        .map(entry => ({
+          id: entry.users.id,
+          full_name: entry.users.full_name,
+          gender: entry.users.gender,
+          age: entry.users.age,
+        }));
+  
+      console.log('Flattened patients:', patients);
       setPatients(patients);
     };
   
