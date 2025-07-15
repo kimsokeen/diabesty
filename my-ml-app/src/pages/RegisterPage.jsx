@@ -9,11 +9,10 @@ function RegistrationPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const role = localStorage.getItem('selectedRole') || 'patient';  // fallback to 'patient'
 
 
   const handleRegister = async () => {
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
