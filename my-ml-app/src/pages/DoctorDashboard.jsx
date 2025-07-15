@@ -32,13 +32,26 @@ function DoctorDashboard() {
   useEffect(() => {
     const fetchPatients = async () => {
       const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name, age, gender')
+        .from('user_roles')
+        .select('role, user_id, users ( id, full_name, age, gender )')
         .eq('role', 'patient');
-      
-      if (!error) setPatients(data);
-      else console.error('Failed to fetch patients:', error.message);
+  
+      if (error) {
+        console.error('Failed to fetch patients:', error.message);
+        return;
+      }
+  
+      const patients = data.map((entry) => ({
+        id: entry.users.id,
+        full_name: entry.users.full_name,
+        gender: entry.users.gender,
+        age: entry.users.age,
+      }));
+  
+      console.log('Fetched patients:', patients);
+      setPatients(patients);
     };
+  
     fetchPatients();
   }, []);
 
