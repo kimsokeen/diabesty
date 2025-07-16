@@ -6,11 +6,11 @@ function DoctorDashboard() {
   const [doctorId, setDoctorId] = useState(null);
   const [patients, setPatients] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [assignedPatientIds, setAssignedPatientIds] = useState([]);
-  const navigate = useNavigate();
+  const [assignedPatients, setAssignedPatients] = useState([]);
   const [doctorName, setDoctorName] = useState('');
+  const navigate = useNavigate();
 
-  // ✅ Get logged-in doctor ID
+  // ✅ Get doctor ID and name
   useEffect(() => {
     const getDoctor = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -28,39 +28,44 @@ function DoctorDashboard() {
     getDoctor();
   }, []);
 
-  // ✅ Fetch all patients from users table
+  // ✅ Fetch patients via user_roles join
   useEffect(() => {
     const fetchPatients = async () => {
-      const { data, error } = await supabase
+      const { data: roleData, error } = await supabase
         .from('user_roles')
-        .select('role, user_id, users ( id, full_name, age, gender )')
+        .select('user_id')
         .eq('role', 'patient');
-  
+
       if (error) {
-        console.error('Failed to fetch patients:', error.message);
+        console.error('Failed to fetch roles:', error.message);
         return;
       }
-  
-      console.log('Raw role-patient data:', data); // 🔍 check this output
-  
-      // Flatten the data
-      const patients = data
-        .filter(entry => entry.users !== null) // filter out bad joins
-        .map(entry => ({
-          id: entry.users.id,
-          full_name: entry.users.full_name,
-          gender: entry.users.gender,
-          age: entry.users.age,
-        }));
-  
-      console.log('Flattened patients:', patients);
-      setPatients(patients);
+
+      const patientIds = roleData.map((entry) => entry.user_id);
+
+      if (patientIds.length === 0) {
+        setPatients([]); // no patients
+        return;
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, full_name, age, gender')
+        .in('id', patientIds);
+
+      if (userError) {
+        console.error('Failed to fetch users:', userError.message);
+        return;
+      }
+      console.log('Patient IDs from user_roles:', patientIds);
+      console.log('Fetched user data:', userData);
+      setPatients(userData);
     };
-  
+
     fetchPatients();
   }, []);
 
-  // ✅ Assign patient to this doctor
+  // ✅ Assign patient to doctor
   const handleAssignPatient = async (patientId) => {
     if (!doctorId) return;
 
@@ -72,34 +77,21 @@ function DoctorDashboard() {
       alert('Assignment failed: ' + error.message);
     } else {
       alert('Patient assigned successfully.');
-      setAssignedPatientIds([...assignedPatientIds, patientId]);
+      // Refresh list
+      setAssignedPatients((prev) => [...prev]);
     }
   };
 
   const filteredPatients = patients.filter((p) =>
-    p.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    (p.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  console.log('SearchQuery:', searchQuery);
+  console.log('Filtered patients:', filteredPatients);
+
+  // ✅ Fetch assigned patient summary
   useEffect(() => {
-    const fetchDoctor = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setDoctorId(user.id);
-
-        const { data: docData } = await supabase
-          .from('users')
-          .select('full_name')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (docData) setDoctorName(docData.full_name);
-      }
-    };
-    fetchDoctor();
-  }, []);
-
-  useEffect(() => {
-    const fetchAssignedPatientIds = async () => {
+    const fetchAssignedPatients = async () => {
       if (!doctorId) return;
 
       const { data: assignments, error: assignmentError } = await supabase
@@ -117,7 +109,7 @@ function DoctorDashboard() {
         .select('id, full_name')
         .in('id', patientIds);
 
-      // Fetch patient results
+      // Fetch results
       const { data: allResults } = await supabase
         .from('results')
         .select('user_id, wound_area, prediction, date')
@@ -151,10 +143,10 @@ function DoctorDashboard() {
         };
       });
 
-      setAssignedPatientIds(patientsSummary);
+      setAssignedPatients(patientsSummary);
     };
 
-    fetchAssignedPatientIds();
+    fetchAssignedPatients();
   }, [doctorId]);
 
   return (
@@ -171,7 +163,7 @@ function DoctorDashboard() {
         style={styles.searchInput}
       />
 
-      {/* ✅ Show matching patients only when typing */}
+      {/* Matching patients (only when typing) */}
       {searchQuery.trim() !== '' && (
         <>
           <p style={styles.userName}>Matching Patients</p>
@@ -183,10 +175,10 @@ function DoctorDashboard() {
                 <p>Age: {patient.age}</p>
                 <button
                   style={styles.assignBtn}
-                  disabled={assignedPatientIds.includes(patient.id)}
+                  disabled={assignedPatients.some((p) => p.id === patient.id)}
                   onClick={() => handleAssignPatient(patient.id)}
                 >
-                  {assignedPatientIds.includes(patient.id) ? '✓ Assigned' : 'Select this patient'}
+                  {assignedPatients.some((p) => p.id === patient.id) ? '✓ Assigned' : 'Select this patient'}
                 </button>
               </div>
             ))}
@@ -194,10 +186,10 @@ function DoctorDashboard() {
         </>
       )}
 
-      {/* ✅ Always show overview below */}
+      {/* Assigned Patients Overview */}
       <h3 style={styles.sectionTitle}>🩺 Your Patients Overview</h3>
       <div style={styles.grid}>
-        {assignedPatientIds.map((patient) => (
+        {assignedPatients.map((patient) => (
           <div key={patient.id} style={styles.card}>
             <h3>{patient.full_name}</h3>
             <p><strong>Prediction:</strong> {patient.latest_prediction}</p>
@@ -208,12 +200,13 @@ function DoctorDashboard() {
             </button>
           </div>
         ))}
-        {assignedPatientIds.length === 0 && <p style={{ textAlign: 'center' }}>No patients assigned yet.</p>}
+        {assignedPatients.length === 0 && (
+          <p style={{ textAlign: 'center' }}>No patients assigned yet.</p>
+        )}
       </div>
     </div>
   );
 }
-
 
 const styles = {
   container: {
@@ -275,7 +268,8 @@ const styles = {
     fontSize: '1.2rem',
     color: '#444',
     margin: '1rem 0',
-  },detailsBtn: {
+  },
+  detailsBtn: {
     marginTop: '1rem',
     backgroundColor: '#2a72de',
     color: 'white',
