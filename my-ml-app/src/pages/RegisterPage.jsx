@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-function RegistrationPage() {
+function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-
+  const role = localStorage.getItem('selectedRole') || 'patient';
 
   const handleRegister = async () => {
     const { error: signUpError } = await supabase.auth.signUp({
@@ -56,10 +56,9 @@ function RegistrationPage() {
     }
 
     // ✅ Insert into user_roles table
-    const selectedRole = localStorage.getItem('selectedRole') || 'patient';
     const { error: insertRoleError } = await supabase.from('user_roles').insert({
       user_id: user.id,
-      role: selectedRole,
+      role,
     });
 
     if (insertRoleError) {
@@ -68,7 +67,7 @@ function RegistrationPage() {
     }
 
     // ✅ Navigate based on role
-    if (selectedRole === 'doctor') {
+    if (role === 'doctor') {
       navigate('/doctordashboard');
     } else {
       navigate('/dashboard');
@@ -151,4 +150,4 @@ const styles = {
   }
 };
 
-export default RegistrationPage;
+export default RegisterPage;
