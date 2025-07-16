@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-function RegistrationPage() {
+function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
@@ -150,4 +150,4 @@ const styles = {
   }
 };
 
-export default RegistrationPage;
+export default RegisterPage;
