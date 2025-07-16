@@ -9,6 +9,8 @@ import MyInfoPage from './pages/MyInfoPage';
 import DoctorDashboard from './pages/DoctorDashboard';
 import WoundSummaryPage from './pages/WoundSummaryPage';
 import ChooseRole from './pages/ChooseRole';
+import PatientDetail from './pages/PatientDetail';
+
 
 function App() {
   return (
@@ -24,6 +26,7 @@ function App() {
         <Route path="/doctordashboard" element={<DoctorDashboard />} />
         <Route path="/woundsummary" element={<WoundSummaryPage />} />
         <Route path="/chooserole" element={<ChooseRole />} />
+        <Route path="/patient/:patientId" element={<PatientDetail />} />
       </Routes>
     </Router>
   );
