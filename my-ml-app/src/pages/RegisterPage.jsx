@@ -9,11 +9,10 @@ function RegistrationPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const role = localStorage.getItem('selectedRole') || 'patient';  // fallback to 'patient'
-
+  const role = localStorage.getItem('selectedRole') || 'patient';
 
   const handleRegister = async () => {
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -57,10 +56,9 @@ function RegistrationPage() {
     }
 
     // ✅ Insert into user_roles table
-    const selectedRole = localStorage.getItem('selectedRole') || 'patient';
     const { error: insertRoleError } = await supabase.from('user_roles').insert({
       user_id: user.id,
-      role: selectedRole,
+      role,
     });
 
     if (insertRoleError) {
@@ -69,7 +67,7 @@ function RegistrationPage() {
     }
 
     // ✅ Navigate based on role
-    if (selectedRole === 'doctor') {
+    if (role === 'doctor') {
       navigate('/doctordashboard');
     } else {
       navigate('/dashboard');
