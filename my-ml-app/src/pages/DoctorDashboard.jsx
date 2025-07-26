@@ -193,7 +193,7 @@ function DoctorDashboard() {
           <div key={patient.id} style={styles.card}>
             <h3>{patient.full_name}</h3>
             <p><strong>Prediction:</strong> {patient.latest_prediction}</p>
-            <p><strong>Wound Area:</strong> {patient.wound_area} px</p>
+            <p><strong>Wound Area:</strong> {patient.wound_area} cm²</p>
             <p><strong>Trend:</strong> {patient.trend}</p>
             <button onClick={() => navigate(`/patient/${patient.id}`)} style={styles.detailsBtn}>
               View Details

@@ -99,7 +99,7 @@ function WoundSummaryPage() {
                 {selectedResult.map((result, index) => (
                   <div key={index} style={{ marginBottom: 20 }}>
                     <p><strong>Prediction:</strong> {result.prediction}</p>
-                    <p><strong>Wound Area:</strong> {result.wound_area} pixels</p>
+                    <p><strong>Wound Area:</strong> {result.wound_area} cm²</p>
                     <p><strong>Time:</strong> {new Date(result.timestamp).toLocaleTimeString()}</p>
                     <p><strong>Timestamp:</strong> {new Date(result.timestamp).toLocaleString()}</p>
                     {result.image_url && (

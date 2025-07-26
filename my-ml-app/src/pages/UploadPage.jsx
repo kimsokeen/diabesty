@@ -15,7 +15,7 @@ function UploadPage() {
     formData.append('file', image);
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/upload/', {
+      const res = await fetch('https://diabesty-backend-1.onrender.com/upload/', {
         method: 'POST',
         body: formData,
       });
@@ -57,19 +57,24 @@ function UploadPage() {
 
       const imageUrl = publicUrlData.publicUrl;
 
+      console.log('🧪 Data received from backend:', data);
+
       // 🕒 Save result to database
       const { error } = await supabase.from('results').insert([
         {
           user_id: userId,
           date: new Date().toISOString(),
           prediction: data.prediction,
-          wound_area: data.wound_area_pixels || 0,
+          wound_area: data.wound_area_cm2 || 0,  // <-- store real area in cm²
           image_url: imageUrl,
         },
       ]);
 
+
       if (error) {
-        console.error('Error saving to Supabase:', error.message);
+        console.error('❌ Supabase insert error:', error);
+      } else {
+        console.log('✅ Result successfully saved to Supabase.');
       }
 
     } catch (err) {
@@ -98,17 +103,19 @@ function UploadPage() {
       </label>
 
       <button onClick={handleUpload} style={styles.uploadBtn}>
-        📤 Analyze Image
+        Analyze Image
       </button>
 
       {response && (
         <div style={styles.resultBox}>
-          <h3>🧠 Prediction Result</h3>
+          <h3>Prediction Result</h3>
           <p><strong>Status:</strong> {response.prediction}</p>
           <p><strong>Confidence:</strong> {response.confidence.toFixed(4)}</p>
           {response.wound_area_pixels !== undefined && (
             <>
-              <p><strong>Wound Area:</strong> {response.wound_area_pixels} pixels</p>
+              {response.wound_area_cm2 && (
+                <p><strong>Estimated Real Wound Area:</strong> {response.wound_area_cm2} cm²</p>
+              )}
               <div style={styles.imageRow}>
                 <div>
                   <p style={styles.imgLabel}>Original</p>
@@ -123,12 +130,27 @@ function UploadPage() {
                   />
                 </div>
               </div>
+              {response.circle_image_base64 && (
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <p style={styles.imgLabel}>Detected Coin Area</p>
+                  <img
+                    src={`data:image/png;base64,${response.circle_image_base64}`}
+                    alt="Detected Coin"
+                    style={styles.sideImage}
+                  />
+                  {response.coin_radius_px && (
+                    <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
+                      Coin radius: {response.coin_radius_px} pixels
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
 
           {response.hsv_stats && (
             <div style={styles.hsvBox}>
-              <h4>🎨 Wound Color Breakdown</h4>
+              <h4>Wound Color Breakdown</h4>
               <p><strong>Red:</strong> {response.hsv_stats.red_area_percent}%</p>
               <p><strong>Yellow:</strong> {response.hsv_stats.yellow_area_percent}%</p>
               <p><strong>Black:</strong> {response.hsv_stats.black_area_percent}%</p>

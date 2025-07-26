@@ -100,7 +100,7 @@ function Dashboard() {
       </div>
 
       <div style={styles.preview}>
-        <h3>🩺 Latest Results</h3>
+        <h3>Latest Results</h3>
 
         {latestResults.length === 0 ? (
           <p>No results yet.</p>
@@ -108,7 +108,7 @@ function Dashboard() {
           latestResults.map((r, idx) => (
             <div key={idx} style={styles.record}>
               <p><strong>Prediction:</strong> {r.prediction}</p>
-              <p><strong>Wound Area:</strong> {r.wound_area} pixels</p>
+              <p><strong>Wound Area:</strong> {r.wound_area} cm²</p>
               <p><strong>Date & Time:</strong> {new Date(r.timestamp).toLocaleString()}</p>
             </div>
           ))

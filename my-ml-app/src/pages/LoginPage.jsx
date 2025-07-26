@@ -45,7 +45,6 @@ function LoginPage() {
   return (
     <div style={styles.container}>
       {/* Logo + Title */}
-      <img src="../assets/logo/logo3_square.png" alt="DiaBest Logo" style={styles.logo} />
       <h1 style={styles.title}>DiaBest</h1>
 
       {/* Login Form */}
