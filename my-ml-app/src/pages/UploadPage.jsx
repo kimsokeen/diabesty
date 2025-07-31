@@ -15,7 +15,7 @@ function UploadPage() {
     formData.append('file', image);
 
     try {
-      const res = await fetch('https://diabesty-backend-1.onrender.com/upload/', {
+      const res = await fetch('https://diabesty-backend-2.onrender.com/upload/', {
         method: 'POST',
         body: formData,
       });
