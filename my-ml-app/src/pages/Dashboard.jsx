@@ -56,7 +56,7 @@ function Dashboard() {
           .from('results')
           .select('*')
           .eq('user_id', user.id)
-          .order('date', { ascending: false })
+          .order('timestamp', { ascending: false }) // Changed 'date' to 'timestamp'
           .limit(3);
         
         console.log("Fetched results:", results);
