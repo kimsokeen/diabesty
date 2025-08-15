@@ -15,6 +15,7 @@ function UploadPage() {
     formData.append('file', image);
 
     try {
+      // 🌐 Step 1: Send image to FastAPI backend for analysis
       const res = await fetch('https://diabesty-backend-2.onrender.com/upload/', {
         method: 'POST',
         body: formData,
@@ -23,7 +24,7 @@ function UploadPage() {
       const data = await res.json();
       setResponse(data);
 
-      // 🔐 Get current user
+      // 🔐 Step 2: Get current user
       const {
         data: { user },
         error: userError,
@@ -36,7 +37,7 @@ function UploadPage() {
 
       const userId = user.id;
 
-      // 🗂 Upload image to Supabase Storage
+      // 🗂 Step 3: Upload image to Supabase Storage
       const fileExt = image.name.split('.').pop();
       const fileName = `${Date.now()}-${userId}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
@@ -50,7 +51,7 @@ function UploadPage() {
         return;
       }
 
-      // 🌐 Get public URL
+      // 🌐 Step 4: Get public URL for the uploaded image
       const { data: publicUrlData } = supabase.storage
         .from('image')
         .getPublicUrl(filePath);
@@ -59,14 +60,16 @@ function UploadPage() {
 
       console.log('🧪 Data received from backend:', data);
 
-      // 🕒 Save result to database
+      // 🕒 Step 5: Save results (including HSV stats) to the database
       const { error } = await supabase.from('results').insert([
         {
           user_id: userId,
           date: new Date().toISOString(),
           prediction: data.prediction,
-          wound_area: data.wound_area_cm2 || 0,  // <-- store real area in cm²
+          wound_area: data.wound_area_cm2 || 0,
           image_url: imageUrl,
+          // ✅ ADDED: The new hsv_stats field from the backend response
+          hsv_stats: data.hsv_stats,
         },
       ]);
 
@@ -251,8 +254,8 @@ const styles = {
     border: '1px solid #ccc'
   },
   imgLabel: {
-      fontWeight: 'bold',
-      marginBottom: '0.5rem'
+    fontWeight: 'bold',
+    marginBottom: '0.5rem'
   }
   };
 
