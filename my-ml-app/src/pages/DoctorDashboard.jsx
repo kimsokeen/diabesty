@@ -82,6 +82,31 @@ function DoctorDashboard() {
     }
   };
 
+  // ✅ NEW: Remove patient from doctor's list
+  const handleRemovePatient = async (patientId) => {
+    if (!doctorId) return;
+    
+    // Confirm with the user before deleting
+    const confirmed = window.confirm('Are you sure you want to remove this patient from your list?');
+    if (!confirmed) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('doctor_patient')
+      .delete()
+      .eq('doctor_id', doctorId)
+      .eq('patient_id', patientId);
+
+    if (error) {
+      alert('Removal failed: ' + error.message);
+    } else {
+      alert('Patient removed successfully.');
+      // Update the state to remove the patient from the list
+      setAssignedPatients((prev) => prev.filter((p) => p.id !== patientId));
+    }
+  };
+
   const filteredPatients = patients.filter((p) =>
     (p.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -99,7 +124,10 @@ function DoctorDashboard() {
         .select('patient_id')
         .eq('doctor_id', doctorId);
 
-      if (assignmentError || !assignments.length) return;
+      if (assignmentError || !assignments.length) {
+        setAssignedPatients([]); // Set to empty if there are no assignments
+        return;
+      }
 
       const patientIds = assignments.map((a) => a.patient_id);
 
@@ -195,9 +223,15 @@ function DoctorDashboard() {
             <p><strong>Prediction:</strong> {patient.latest_prediction}</p>
             <p><strong>Wound Area:</strong> {patient.wound_area} cm²</p>
             <p><strong>Trend:</strong> {patient.trend}</p>
-            <button onClick={() => navigate(`/patient/${patient.id}`)} style={styles.detailsBtn}>
-              View Details
-            </button>
+            <div style={styles.buttonGroup}>
+              <button onClick={() => navigate(`/patient/${patient.id}`)} style={styles.detailsBtn}>
+                View Details
+              </button>
+              {/* NEW: Remove button */}
+              <button onClick={() => handleRemovePatient(patient.id)} style={styles.removeBtn}>
+                Remove
+              </button>
+            </div>
           </div>
         ))}
         {assignedPatients.length === 0 && (
@@ -264,7 +298,8 @@ const styles = {
     backgroundColor: '#2a72de',
     color: '#fff',
     cursor: 'pointer',
-  },  sectionTitle: {
+  },
+  sectionTitle: {
     fontSize: '1.2rem',
     color: '#444',
     margin: '1rem 0',
@@ -277,7 +312,26 @@ const styles = {
     borderRadius: '8px',
     padding: '0.5rem 1rem',
     cursor: 'pointer',
+    width: '100%' // Make button full width
   },
+  // NEW: Style for the remove button
+  removeBtn: {
+    marginTop: '0.5rem',
+    backgroundColor: '#e74c3c', // Red color for remove
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '0.5rem 1rem',
+    cursor: 'pointer',
+    width: '100%' // Make button full width
+  },
+  // NEW: Style for the button group
+  buttonGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    marginTop: '1rem'
+  }
 };
 
 export default DoctorDashboard;
