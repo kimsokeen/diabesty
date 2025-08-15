@@ -171,6 +171,5 @@ function PatientDetail() {
       </div>
     );
   }
-  
-  export default PatientDetail;
+export default PatientDetail;
 
