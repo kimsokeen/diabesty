@@ -8,6 +8,7 @@ function DoctorDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [assignedPatients, setAssignedPatients] = useState([]);
   const [doctorName, setDoctorName] = useState('');
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // ✅ NEW: State to force a data refresh
   const navigate = useNavigate();
 
   // ✅ Get doctor ID and name
@@ -78,7 +79,7 @@ function DoctorDashboard() {
     } else {
       alert('Patient assigned successfully.');
       // Refresh list
-      setAssignedPatients((prev) => [...prev]);
+      setRefreshTrigger(prev => prev + 1); // ✅ NEW: Increment to trigger a re-fetch
     }
   };
 
@@ -102,8 +103,8 @@ function DoctorDashboard() {
       alert('Removal failed: ' + error.message);
     } else {
       alert('Patient removed successfully.');
-      // Update the state to remove the patient from the list
-      setAssignedPatients((prev) => prev.filter((p) => p.id !== patientId));
+      // ✅ NEW: Trigger a re-fetch of the assigned patients after a successful deletion
+      setRefreshTrigger(prev => prev + 1);
     }
   };
 
@@ -175,7 +176,7 @@ function DoctorDashboard() {
     };
 
     fetchAssignedPatients();
-  }, [doctorId]);
+  }, [doctorId, refreshTrigger]); // ✅ UPDATED: Add refreshTrigger to the dependency array
 
   return (
     <div style={styles.container}>
@@ -290,15 +291,6 @@ const styles = {
     fontStyle: 'italic',
     marginBottom: '1.5rem',
   },
-  searchButton: {
-    padding: '0.8rem 1rem',
-    fontSize: '1rem',
-    borderRadius: '10px',
-    border: 'none',
-    backgroundColor: '#2a72de',
-    color: '#fff',
-    cursor: 'pointer',
-  },
   sectionTitle: {
     fontSize: '1.2rem',
     color: '#444',
@@ -314,7 +306,6 @@ const styles = {
     cursor: 'pointer',
     width: '100%' // Make button full width
   },
-  // NEW: Style for the remove button
   removeBtn: {
     marginTop: '0.5rem',
     backgroundColor: '#e74c3c', // Red color for remove
@@ -325,7 +316,6 @@ const styles = {
     cursor: 'pointer',
     width: '100%' // Make button full width
   },
-  // NEW: Style for the button group
   buttonGroup: {
     display: 'flex',
     flexDirection: 'column',
