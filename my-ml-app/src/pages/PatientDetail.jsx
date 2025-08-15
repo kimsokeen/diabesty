@@ -34,7 +34,7 @@ function PatientDetail() {
     const fetchResults = async () => {
       const { data, error } = await supabase
         .from('results')
-        .select('date, wound_area, prediction','image_url')
+        .select('date, wound_area, prediction ,image_url')
         .eq('user_id', patientId)
         .order('date', { ascending: true });
 
