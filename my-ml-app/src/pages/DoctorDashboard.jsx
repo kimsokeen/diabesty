@@ -8,10 +8,10 @@ function DoctorDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [assignedPatients, setAssignedPatients] = useState([]);
   const [doctorName, setDoctorName] = useState('');
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // ✅ NEW: State to force a data refresh
+  const [refreshTrigger, setRefreshTrigger] = useState(0); 
   const navigate = useNavigate();
 
-  // ✅ Get doctor ID and name
+  // Get doctor ID and name
   useEffect(() => {
     const getDoctor = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -29,7 +29,7 @@ function DoctorDashboard() {
     getDoctor();
   }, []);
 
-  // ✅ Fetch patients via user_roles join
+  // Fetch patients via user_roles join
   useEffect(() => {
     const fetchPatients = async () => {
       const { data: roleData, error } = await supabase
@@ -45,7 +45,7 @@ function DoctorDashboard() {
       const patientIds = roleData.map((entry) => entry.user_id);
 
       if (patientIds.length === 0) {
-        setPatients([]); // no patients
+        setPatients([]);
         return;
       }
 
@@ -66,7 +66,7 @@ function DoctorDashboard() {
     fetchPatients();
   }, []);
 
-  // ✅ Assign patient to doctor
+  // Assign patient to doctor
   const handleAssignPatient = async (patientId) => {
     if (!doctorId) return;
 
@@ -78,16 +78,14 @@ function DoctorDashboard() {
       alert('Assignment failed: ' + error.message);
     } else {
       alert('Patient assigned successfully.');
-      // Refresh list
-      setRefreshTrigger(prev => prev + 1); // ✅ NEW: Increment to trigger a re-fetch
+      setRefreshTrigger(prev => prev + 1);
     }
   };
 
-  // ✅ NEW: Remove patient from doctor's list
+  // Remove patient from doctor's list
   const handleRemovePatient = async (patientId) => {
     if (!doctorId) return;
     
-    // Confirm with the user before deleting
     const confirmed = window.confirm('Are you sure you want to remove this patient from your list?');
     if (!confirmed) {
       return;
@@ -103,7 +101,6 @@ function DoctorDashboard() {
       alert('Removal failed: ' + error.message);
     } else {
       alert('Patient removed successfully.');
-      // ✅ NEW: Trigger a re-fetch of the assigned patients after a successful deletion
       setRefreshTrigger(prev => prev + 1);
     }
   };
@@ -115,7 +112,7 @@ function DoctorDashboard() {
   console.log('SearchQuery:', searchQuery);
   console.log('Filtered patients:', filteredPatients);
 
-  // ✅ Fetch assigned patient summary
+  // Fetch assigned patient summary
   useEffect(() => {
     const fetchAssignedPatients = async () => {
       if (!doctorId) return;
@@ -126,19 +123,17 @@ function DoctorDashboard() {
         .eq('doctor_id', doctorId);
 
       if (assignmentError || !assignments.length) {
-        setAssignedPatients([]); // Set to empty if there are no assignments
+        setAssignedPatients([]);
         return;
       }
 
       const patientIds = assignments.map((a) => a.patient_id);
 
-      // Fetch patient info
       const { data: users } = await supabase
         .from('users')
         .select('id, full_name')
         .in('id', patientIds);
 
-      // Fetch results
       const { data: allResults } = await supabase
         .from('results')
         .select('user_id, wound_area, prediction, date')
@@ -176,14 +171,13 @@ function DoctorDashboard() {
     };
 
     fetchAssignedPatients();
-  }, [doctorId, refreshTrigger]); // ✅ UPDATED: Add refreshTrigger to the dependency array
+  }, [doctorId, refreshTrigger]);
 
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Doctor Dashboard</h2>
       <p style={styles.userName}>Hello, Dr. {doctorName}</p>
 
-      {/* Search bar */}
       <input
         type="text"
         placeholder="Search patient by name..."
@@ -192,7 +186,6 @@ function DoctorDashboard() {
         style={styles.searchInput}
       />
 
-      {/* Matching patients (only when typing) */}
       {searchQuery.trim() !== '' && (
         <>
           <p style={styles.userName}>Matching Patients</p>
@@ -215,7 +208,6 @@ function DoctorDashboard() {
         </>
       )}
 
-      {/* Assigned Patients Overview */}
       <h3 style={styles.sectionTitle}>🩺 Your Patients Overview</h3>
       <div style={styles.grid}>
         {assignedPatients.map((patient) => (
@@ -228,7 +220,6 @@ function DoctorDashboard() {
               <button onClick={() => navigate(`/patient/${patient.id}`)} style={styles.detailsBtn}>
                 View Details
               </button>
-              {/* NEW: Remove button */}
               <button onClick={() => handleRemovePatient(patient.id)} style={styles.removeBtn}>
                 Remove
               </button>
@@ -296,31 +287,33 @@ const styles = {
     color: '#444',
     margin: '1rem 0',
   },
+  // UPDATED: Styles for side-by-side buttons
   detailsBtn: {
-    marginTop: '1rem',
+    flex: '2', // Make this button twice as big as the other one
     backgroundColor: '#2a72de',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
     padding: '0.5rem 1rem',
     cursor: 'pointer',
-    width: '100%' // Make button full width
   },
   removeBtn: {
-    marginTop: '0.5rem',
-    backgroundColor: '#e74c3c', // Red color for remove
+    flex: '1', // Make this button smaller
+    backgroundColor: '#e74c3c',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
     padding: '0.5rem 1rem',
     cursor: 'pointer',
-    width: '100%' // Make button full width
   },
+  // UPDATED: Use a row layout for the button group
   buttonGroup: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     gap: '0.5rem',
-    marginTop: '1rem'
+    marginTop: '1rem',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   }
 };
 
