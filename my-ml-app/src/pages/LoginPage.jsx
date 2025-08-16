@@ -45,6 +45,11 @@ function LoginPage() {
   return (
     <div style={styles.container}>
       {/* Logo + Title */}
+      <img 
+        src="https://raw.githubusercontent.com/kimsokeen/diabesty/my-ml-app/src/pages/logo3_square.png"
+        alt="DiaBest App Logo"
+        style={styles.logo}
+      />
       <h1 style={styles.title}>DiaBest</h1>
 
       {/* Login Form */}
