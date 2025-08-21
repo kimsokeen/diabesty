@@ -10,8 +10,10 @@ function UploadPage() {
 
   const handleUpload = async () => {
     if (!image) return;
+
     const formData = new FormData();
     formData.append('file', image);
+
     try {
       // 🌐 Step 1: Send image to FastAPI backend for analysis
       const res = await fetch('https://diabesty-backend-2.onrender.com/upload/', {
@@ -21,6 +23,7 @@ function UploadPage() {
 
       const data = await res.json();
       setResponse(data);
+
       // 🔐 Step 2: Get current user
       const {
         data: { user },
@@ -254,6 +257,6 @@ const styles = {
     fontWeight: 'bold',
     marginBottom: '0.5rem'
   }
-  };
+ };
 
 export default UploadPage;
