@@ -1,299 +1,343 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../supabaseClient';
 
 function UploadPage() {
-  const [image, setImage] = useState(null);
-  const [response, setResponse] = useState(null);
-  const navigate = useNavigate();
-  const [previewURL, setPreviewURL] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [image, setImage] = useState(null);
+  const [response, setResponse] = useState(null);
+  const navigate = useNavigate();
+  const [previewURL, setPreviewURL] = useState(null);
 
-  // IMPORTANT: Replace with your actual Supabase URL and anon key
-  const supabase = createClient(
-    'YOUR_SUPABASE_URL',
-    'YOUR_SUPABASE_ANON_KEY'
-  );
+  const handleUpload = async () => {
+    if (!image) return;
+    const formData = new FormData();
+    formData.append('file', image);
+    try {
+      // 🌐 Step 1: Send image to FastAPI backend for analysis
+      const res = await fetch('https://diabesty-backend-2.onrender.com/upload/', {
+        method: 'POST',
+        body: formData,
+      });
 
-  const handleUpload = async () => {
-    if (!image) {
-      setMessage('Please select an image to upload.');
-      return;
-    }
+      const data = await res.json();
+      setResponse(data);
+      // 🔐 Step 2: Get current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    setLoading(true);
-    setMessage('');
+      if (userError || !user) {
+        console.error('User not logged in');
+        return;
+      }
 
-    const formData = new FormData();
-    formData.append('file', image);
+      const userId = user.id;
 
-    try {
-      // 🌐 Step 1: Send image to FastAPI backend for analysis
-      const res = await fetch('https://diabesty-backend-2.onrender.com/upload/', {
-        method: 'POST',
-        body: formData,
-      });
+      // 🗂 Step 3: Upload image to Supabase Storage
+      const fileExt = image.name.split('.').pop();
+      const fileName = `${Date.now()}-${userId}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
 
-      const data = await res.json();
-      setResponse(data);
+      const { error: storageError } = await supabase.storage
+        .from('image') // <- your bucket name
+        .upload(filePath, image);
 
-      // 🔐 Step 2: Get current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      if (storageError) {
+        console.error('Storage upload error:', storageError.message);
+        return;
+      }
 
-      if (userError || !user) {
-        console.error('User not logged in');
-        setLoading(false);
-        return;
-      }
+      // 🌐 Step 4: Get public URL for the uploaded image
+      const { data: publicUrlData } = supabase.storage
+        .from('image')
+        .getPublicUrl(filePath);
 
-      const userId = user.id;
+      const imageUrl = publicUrlData.publicUrl;
 
-      // 🗂 Step 3: Upload image to Supabase Storage
-      const fileExt = image.name.split('.').pop();
-      const fileName = `${Date.now()}-${userId}.${fileExt}`;
-      const filePath = `${userId}/${fileName}`;
+      console.log('🧪 Data received from backend:', data);
 
-      const { error: storageError } = await supabase.storage
-        .from('image') // <- your bucket name
-        .upload(filePath, image);
-
-      if (storageError) {
-        console.error('Storage upload error:', storageError.message);
-        setLoading(false);
-        return;
-      }
-
-      // 🌐 Step 4: Get public URL for the uploaded image
-      const { data: publicUrlData } = supabase.storage
-        .from('image')
-        .getPublicUrl(filePath);
-
-      const imageUrl = publicUrlData.publicUrl;
-
-      console.log('🧪 Data received from backend:', data);
-
-      // 🕒 Step 5: Save results (including HSV stats and confidence) to the database
-      const { error } = await supabase.from('results').insert([
-        {
-          user_id: userId,
-          date: new Date().toISOString(),
-          prediction: data.prediction,
-          confidence_score: data.confidence_score,
-          wound_area: data.wound_area_cm2 || 0,
-          image_url: imageUrl,
-          hsv_stats: data.hsv_stats,
-        },
-      ]);
+      // 🕒 Step 5: Save results (including HSV stats) to the database
+      const { error } = await supabase.from('results').insert([
+        {
+          user_id: userId,
+          date: new Date().toISOString(),
+          prediction: data.prediction,
+          wound_area: data.wound_area_cm2 || 0,
+          image_url: imageUrl,
+          // ✅ ADDED: The new hsv_stats field from the backend response
+          hsv_stats: data.hsv_stats,
+        },
+      ]);
 
 
-      if (error) {
-        console.error('❌ Supabase insert error:', error);
-      } else {
-        console.log('✅ Result successfully saved to Supabase.');
-        setMessage('✅ Result successfully saved to Supabase.');
-      }
+      if (error) {
+        console.error('❌ Supabase insert error:', error);
+      } else {
+        console.log('✅ Result successfully saved to Supabase.');
+      }
 
-    } catch (err) {
-      console.error('Upload failed:', err);
-      setMessage(`Upload failed: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+    } catch (err) {
+      console.error('Upload failed:', err);
+    }
+  };
 
 
-  // Styles from the original code for reference, kept here for continuity
-  const styles = {
-    container: {
-      maxWidth: 500,
-      margin: '40px auto',
-      textAlign: 'center',
-      padding: '2rem',
-      borderRadius: '12px',
-      background: '#f2f6fb',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-      position: 'relative'
-    },
-    title: {
-      marginBottom: '1.5rem',
-      color: '#2a72de'
-    },
-    uploadBox: {
-      display: 'block',
-      padding: '1rem',
-      border: '2px dashed #aaa',
-      borderRadius: '10px',
-      background: '#fff',
-      cursor: 'pointer',
-      marginBottom: '1rem'
-    },
-    uploadBtn: {
-      padding: '12px 24px',
-      backgroundColor: '#2a72de',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      fontWeight: 'bold',
-      fontSize: '1rem',
-      cursor: 'pointer'
-    },
-    resultBox: {
-      marginTop: '2rem',
-      backgroundColor: '#fff',
-      padding: '1.5rem',
-      borderRadius: '10px',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-    },
-    maskImage: {
-      marginTop: '1rem',
-      width: '100%',
-      borderRadius: '8px',
-      border: '1px solid #ccc'
-    },
-    backBtn: {
-      position: 'absolute',
-      top: 10,
-      left: 10,
-      background: 'none',
-      border: 'none',
-      fontSize: '1.2rem',
-      cursor: 'pointer',
-      color: '#2a72de'
-    },
-    hsvBox: {
-      marginTop: '1rem',
-      backgroundColor: '#fef9f2',
-      padding: '1rem',
-      border: '1px dashed #ffa726',
-      borderRadius: '8px',
-      textAlign: 'left',
-    },
-    previewBox: {
-      marginBottom: '1rem',
-      textAlign: 'center',
-    },
-    previewImage: {
-      width: '100%',
-      maxHeight: '300px',
-      objectFit: 'contain',
-      borderRadius: '8px',
-      border: '1px solid #ccc',
-    },
-    imageRow: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      gap: '1rem',
-      marginTop: '1rem',
-    },
-    sideImage: {
-      width: '220px',
-      height: '220px',
-      objectFit: 'contain',
-      borderRadius: '8px',
-      border: '1px solid #ccc'
-    },
-    imgLabel: {
-      fontWeight: 'bold',
-      marginBottom: '0.5rem'
-    }
-  };
+  return (
+    <div style={styles.container}>
+      <button onClick={() => navigate('/dashboard')} style={styles.backBtn}>← Back</button>
+      <h2 style={styles.title}>Upload Foot Image</h2>
 
-  return (
-    <div style={styles.container}>
-      <button onClick={() => navigate('/dashboard')} style={styles.backBtn}>← Back</button>
-      <h2 style={styles.title}>Upload Foot Image</h2>
+      <label style={styles.uploadBox}>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            setImage(file);
+            setPreviewURL(URL.createObjectURL(file));
+          }}
+          style={{ display: 'none' }}
+        />
+        {image ? image.name : 'Click to select an image'}
+      </label>
 
-      {message && (
-        <div style={{
-          backgroundColor: message.startsWith('✅') ? '#d4edda' : '#f8d7da',
-          color: message.startsWith('✅') ? '#155724' : '#721c24',
-          padding: '10px',
-          borderRadius: '8px',
-          marginBottom: '1rem'
-        }}>
-          {message}
-        </div>
-      )}
+      <button onClick={handleUpload} style={styles.uploadBtn}>
+        Analyze Image
+      </button>
 
-      <label style={styles.uploadBox}>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files[0];
-            setImage(file);
-            setPreviewURL(URL.createObjectURL(file));
-          }}
-          style={{ display: 'none' }}
-        />
-        {image ? image.name : 'Click to select an image'}
-      </label>
+      {response && (
+        <div style={styles.resultBox}>
+          <h3>Prediction Result</h3>
+          <p><strong>Status:</strong> {response.prediction}</p>
+          {response.wound_area_pixels !== undefined && (
+            <>
+              {response.wound_area_cm2 && (
+                <p><strong>Estimated Real Wound Area:</strong> {response.wound_area_cm2} cm²</p>
+              )}
+              <div style={styles.imageRow}>
+                <div>
+                  <p style={styles.imgLabel}>Original</p>
+                  <img src={previewURL} alt="Original" style={styles.sideImage} />
+                </div>
+                <div>
+                  <p style={styles.imgLabel}>Wound Mask</p>
+                  <img
+                    src={`data:image/png;base64,${response.mask_base64}`}
+                    alt="Wound Mask"
+                    style={styles.sideImage}
+                  />
+                </div>
+              </div>
+              {response.circle_image_base64 && (
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <p style={styles.imgLabel}>Detected Coin Area</p>
+                  <img
+                    src={`data:image/png;base64,${response.circle_image_base64}`}
+                    alt="Detected Coin"
+                    style={styles.sideImage}
+                  />
+                  {response.coin_radius_px && (
+                    <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
+                      Coin radius: {response.coin_radius_px} pixels
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
-      <button onClick={handleUpload} style={styles.uploadBtn} disabled={loading}>
-        {loading ? 'Analyzing...' : 'Analyze Image'}
-      </button>
-
-      {response && (
-        <div style={styles.resultBox}>
-          <h3>Prediction Result</h3>
-          <p><strong>Status:</strong> {response.prediction}</p>
-          {response.confidence_score !== undefined && (
-            <p><strong>Confidence Level:</strong> {(response.confidence_score * 100).toFixed(2)}%</p>
-          )}
-
-          {response.wound_area_pixels !== undefined && (
-            <>
-              {response.wound_area_cm2 && (
-                <p><strong>Estimated Real Wound Area:</strong> {response.wound_area_cm2} cm²</p>
-              )}
-              <div style={styles.imageRow}>
-                <div>
-                  <p style={styles.imgLabel}>Original</p>
-                  <img src={previewURL} alt="Original" style={styles.sideImage} />
-                </div>
-                <div>
-                  <p style={styles.imgLabel}>Wound Mask</p>
-                  <img
-                    src={`data:image/png;base64,${response.mask_base64}`}
-                    alt="Wound Mask"
-                    style={styles.sideImage}
-                  />
-                </div>
-              </div>
-              {response.circle_image_base64 && (
-                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                  <p style={styles.imgLabel}>Detected Coin Area</p>
-                  <img
-                    src={`data:image/png;base64,${response.circle_image_base64}`}
-                    alt="Detected Coin"
-                    style={styles.sideImage}
-                  />
-                  {response.coin_radius_px && (
-                    <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
-                      Coin radius: {response.coin_radius_px} pixels
-                    </p>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-
-          {response.hsv_stats && (
-            <div style={styles.hsvBox}>
-              <h4>Wound Color Breakdown</h4>
-              <p><strong>Red:</strong> {response.hsv_stats.red_area_percent}%</p>
-              <p><strong>Yellow:</strong> {response.hsv_stats.yellow_area_percent}%</p>
-              <p><strong>Black:</strong> {response.hsv_stats.black_area_percent}%</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+          {response.hsv_stats && (
+            <div style={styles.hsvBox}>
+              <h4>Wound Color Breakdown</h4>
+              <p><strong>Red:</strong> {response.hsv_stats.red_area_percent}%</p>
+              <p><strong>Yellow:</strong> {response.hsv_stats.yellow_area_percent}%</p>
+              <p><strong>Black:</strong> {response.hsv_stats.black_area_percent}%</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
+
+const styles = {
+  container: {
+    maxWidth: 500,
+    margin: '40px auto',
+    textAlign: 'center',
+    padding: '2rem',
+    borderRadius: '12px',
+    background: '#f2f6fb',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+    position: 'relative'
+  },
+  title: {
+
+    marginBottom: '1.5rem',
+
+    color: '#2a72de'
+
+  },
+
+  uploadBox: {
+
+    display: 'block',
+
+    padding: '1rem',
+
+    border: '2px dashed #aaa',
+
+    borderRadius: '10px',
+
+    background: '#fff',
+
+    cursor: 'pointer',
+
+    marginBottom: '1rem'
+
+  },
+
+  uploadBtn: {
+
+    padding: '12px 24px',
+
+    backgroundColor: '#2a72de',
+
+    color: 'white',
+
+    border: 'none',
+
+    borderRadius: '8px',
+
+    fontWeight: 'bold',
+
+    fontSize: '1rem',
+
+    cursor: 'pointer'
+
+  },
+
+  resultBox: {
+
+    marginTop: '2rem',
+
+    backgroundColor: '#fff',
+
+    padding: '1.5rem',
+
+    borderRadius: '10px',
+
+    boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+
+  },
+
+  maskImage: {
+
+    marginTop: '1rem',
+
+    width: '100%',
+
+    borderRadius: '8px',
+
+    border: '1px solid #ccc'
+
+  },
+
+  backBtn: {
+
+    position: 'absolute',
+
+    top: 10,
+
+    left: 10,
+
+    background: 'none',
+
+    border: 'none',
+
+    fontSize: '1.2rem',
+
+    cursor: 'pointer',
+
+    color: '#2a72de'
+
+  },
+
+  hsvBox: {
+
+    marginTop: '1rem',
+
+    backgroundColor: '#fef9f2',
+
+    padding: '1rem',
+
+    border: '1px dashed #ffa726',
+
+    borderRadius: '8px',
+
+    textAlign: 'left',
+
+  },
+
+  previewBox: {
+
+    marginBottom: '1rem',
+
+    textAlign: 'center',
+
+  },
+
+  previewImage: {
+
+    width: '100%',
+
+    maxHeight: '300px',
+
+    objectFit: 'contain',
+
+    borderRadius: '8px',
+
+    border: '1px solid #ccc',
+
+  },
+
+  imageRow: {
+
+    display: 'flex',
+
+    justifyContent: 'space-between',
+
+    gap: '1rem',
+
+    marginTop: '1rem',
+
+  },
+
+  sideImage: {
+
+    width: '220px',
+
+    height: '220px',
+
+    objectFit: 'contain',
+
+    borderRadius: '8px',
+
+    border: '1px solid #ccc'
+
+  },
+
+  imgLabel: {
+
+    fontWeight: 'bold',
+
+    marginBottom: '0.5rem'
+
+  }
+
+  };
+
+
 
 export default UploadPage;
