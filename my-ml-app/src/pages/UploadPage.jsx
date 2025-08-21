@@ -173,171 +173,87 @@ const styles = {
     position: 'relative'
   },
   title: {
-
     marginBottom: '1.5rem',
-
     color: '#2a72de'
-
   },
-
   uploadBox: {
-
     display: 'block',
-
     padding: '1rem',
-
     border: '2px dashed #aaa',
-
     borderRadius: '10px',
-
     background: '#fff',
-
     cursor: 'pointer',
-
     marginBottom: '1rem'
-
   },
-
   uploadBtn: {
-
     padding: '12px 24px',
-
     backgroundColor: '#2a72de',
-
     color: 'white',
-
     border: 'none',
-
     borderRadius: '8px',
-
     fontWeight: 'bold',
-
     fontSize: '1rem',
-
     cursor: 'pointer'
-
   },
-
   resultBox: {
-
     marginTop: '2rem',
-
     backgroundColor: '#fff',
-
     padding: '1.5rem',
-
     borderRadius: '10px',
-
     boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-
   },
-
   maskImage: {
-
     marginTop: '1rem',
-
     width: '100%',
-
     borderRadius: '8px',
-
     border: '1px solid #ccc'
-
   },
-
   backBtn: {
-
     position: 'absolute',
-
     top: 10,
-
     left: 10,
-
     background: 'none',
-
     border: 'none',
-
     fontSize: '1.2rem',
-
     cursor: 'pointer',
-
     color: '#2a72de'
-
   },
-
   hsvBox: {
-
     marginTop: '1rem',
-
     backgroundColor: '#fef9f2',
-
     padding: '1rem',
-
     border: '1px dashed #ffa726',
-
     borderRadius: '8px',
-
     textAlign: 'left',
-
   },
-
   previewBox: {
-
     marginBottom: '1rem',
-
     textAlign: 'center',
-
   },
-
   previewImage: {
-
     width: '100%',
-
     maxHeight: '300px',
-
     objectFit: 'contain',
-
     borderRadius: '8px',
-
     border: '1px solid #ccc',
-
   },
-
   imageRow: {
-
     display: 'flex',
-
     justifyContent: 'space-between',
-
     gap: '1rem',
-
     marginTop: '1rem',
-
   },
-
   sideImage: {
-
     width: '220px',
-
     height: '220px',
-
     objectFit: 'contain',
-
     borderRadius: '8px',
-
     border: '1px solid #ccc'
-
   },
-
   imgLabel: {
-
     fontWeight: 'bold',
-
     marginBottom: '0.5rem'
-
   }
-
   };
-
-
 
 export default UploadPage;
