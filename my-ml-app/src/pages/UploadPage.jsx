@@ -69,7 +69,7 @@ function UploadPage() {
           wound_area: data.wound_area_cm2 || 0,
           image_url: imageUrl,
           // ✅ ADDED: The new hsv_stats field from the backend response
-          hsv_stats: data.hsv_stats, 
+          hsv_stats: data.hsv_stats
         },
       ]);
 
