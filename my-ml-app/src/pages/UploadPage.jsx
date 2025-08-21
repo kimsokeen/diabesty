@@ -114,7 +114,6 @@ function UploadPage() {
         <div style={styles.resultBox}>
           <h3>Prediction Result</h3>
           <p><strong>Status:</strong> {response.prediction}</p>
-          <p><strong>Confidence level:</strong> {response.confidence_score}</p>
           {response.wound_area_pixels !== undefined && (
             <>
               {response.wound_area_cm2 && (
