@@ -70,6 +70,7 @@ function UploadPage() {
           image_url: imageUrl,
           // ✅ ADDED: The new hsv_stats field from the backend response
           hsv_stats: data.hsv_stats,
+          confidence_score: data.confidence, 
         },
       ]);
 
@@ -113,6 +114,7 @@ function UploadPage() {
         <div style={styles.resultBox}>
           <h3>Prediction Result</h3>
           <p><strong>Status:</strong> {response.prediction}</p>
+          <p><strong>Confidence level:</strong> {response.confidence_score}</p>
           {response.wound_area_pixels !== undefined && (
             <>
               {response.wound_area_cm2 && (
