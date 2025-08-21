@@ -204,6 +204,9 @@ const styles = {
     padding: '1.5rem',
     borderRadius: '10px',
     boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+    '& p': {
+    margin: '0', // This would require a CSS-in-JS library that supports nesting
+  }
   },
   maskImage: {
     marginTop: '1rem',
@@ -228,6 +231,9 @@ const styles = {
     border: '1px dashed #ffa726',
     borderRadius: '8px',
     textAlign: 'left',
+    '& p': { // Again, this needs a CSS-in-JS lib or a different approach
+    margin: '0',
+  }
   },
   previewBox: {
     marginBottom: '1rem',
